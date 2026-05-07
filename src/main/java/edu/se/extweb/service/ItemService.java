@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -126,7 +127,11 @@ public class ItemService {
             return response;
         }
 
-        return null;
+        baseMetaData.setCode(404);
+        baseMetaData.setSuccess(false);
+        baseMetaData.setErrorMessage("Not found");
+
+        return new ApiResponse<>(baseMetaData, new ArrayList<>());
     }
 
     public  ApiResponse<BaseMetaData, Item> getAllAsApiResponse() {
@@ -156,6 +161,26 @@ public ApiResponse<PaginationMetaData, Item> getItemsPage(ItemPageRequest reques
     metaData.setTotalElements(page.getTotalElements());
     metaData.setTotalPages(page.getTotalPages());
     List<Item> items = page.getContent();
+
+    if (request.page() >= page.getTotalPages() && page.getTotalElements() > 0) {
+        int lastPageNumber = page.getTotalPages() - 1;
+
+        Pageable fallbackPageable = PageRequest.of(0, request.size(),
+                Sort.by(Sort.Direction.DESC, "id"));
+        items = new ArrayList<>(itemRepository.findAll(fallbackPageable).getContent());
+        Collections.reverse(items);
+
+        metaData.setCode(404);
+        metaData.setSuccess(false);
+        metaData.setErrorMessage("Maximal page for the size is " + page.getTotalPages());
+        metaData.setNumber(lastPageNumber);
+        metaData.setFirst(true);
+        metaData.setLast(true);
+
+        log.warn("Out of range. Requested page {} but maximal page for the size is {}",
+                request.page(), page.getTotalPages());
+    }
+
     ApiResponse<PaginationMetaData, Item> response =
             new ApiResponse<>(metaData, items);
 

@@ -7,9 +7,11 @@ import edu.se.extweb.response.BaseMetaData;
 import edu.se.extweb.response.PaginationMetaData;
 import edu.se.extweb.service.ItemService;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 @SpringBootTest
+@ExtendWith(OutputCaptureExtension.class)
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ItemServicePagingTest {
 
@@ -119,7 +122,9 @@ class ItemServicePagingTest {
 
     @Test
     void testLogging(CapturedOutput output){
-        
+        ItemPageRequest request = new ItemPageRequest(9,4);
+        underTest.getItemsPage(request);
+
         assertTrue(output.toString().contains("Out of range"));
     }
 
