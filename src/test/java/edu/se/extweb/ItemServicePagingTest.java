@@ -36,6 +36,7 @@ class ItemServicePagingTest {
 
     @BeforeEach
     void setUp() {
+        TestItems.reset(underTest);
     }
    @AfterEach
     void tearsDown(){
@@ -65,29 +66,81 @@ class ItemServicePagingTest {
          assertNotNull(response.getData());
          assertFalse(response.getData().isEmpty());
          assertEquals(5, response.getData().size());
-         assertEquals("69aeefcbe5c3dbd26376b0c5", response.getData().get(0).getId());
+         assertEquals(TestItems.LAST_ID, response.getData().get(0).getId());
     }
 
     @Test
     void whenSizeIs_7_AndPageIs_4_ThenIsLast_TrueAndSizeEquals_2(){
-        // your code
+        // given
+        ItemPageRequest request = new ItemPageRequest(4,7);
+        // when
+        ApiResponse<PaginationMetaData, Item> response = underTest.getItemsPage(request);
+        // then
+        assertNotNull(response);
+        assertNotNull(response.getMeta());
+
+        assertEquals(200, response.getMeta().getCode());
+        assertTrue(response.getMeta().isSuccess());
+        assertNull(response.getMeta().getErrorMessage());
+
+        assertEquals(4, response.getMeta().getNumber());
+        assertEquals(7, response.getMeta().getSize());
+        assertEquals(30, response.getMeta().getTotalElements());
+        assertEquals(5, response.getMeta().getTotalPages());
+        assertFalse(response.getMeta().isFirst());
+        assertTrue(response.getMeta().isLast());
+
+        assertNotNull(response.getData());
+        assertEquals(2, response.getData().size());
     }
 
 
     @Test
     void whenTheListIsEmptyThenErrorMessageHasTheWarning(){
-        // your code
+        // given
+        underTest.deleteAll();
+        ItemPageRequest request = new ItemPageRequest(0,5);
+        // when
+        ApiResponse<PaginationMetaData, Item> response = underTest.getItemsPage(request);
+        // then
+        assertNotNull(response);
+        assertNotNull(response.getMeta());
+        assertEquals(404, response.getMeta().getCode());
+        assertFalse(response.getMeta().isSuccess());
+        assertEquals("Items list is empty", response.getMeta().getErrorMessage());
     }
 
     @Test
     void whenTheListIsEmptyThenMetadataAndDataAreNotNull(){
-        // your code
+        // given
+        underTest.deleteAll();
+        ItemPageRequest request = new ItemPageRequest(0,5);
+        // when
+        ApiResponse<PaginationMetaData, Item> response = underTest.getItemsPage(request);
+        // then
+        assertNotNull(response);
+        assertNotNull(response.getMeta());
+        assertNotNull(response.getData());
+        assertTrue(response.getData().isEmpty());
+        assertEquals(0, response.getMeta().getTotalElements());
+        assertEquals(0, response.getMeta().getTotalPages());
     }
 
 
     @Test
     void whenPageValueIsOutOfRangeThenErrorMessageHasTheWarning(){
-        // your code
+        // given
+        ItemPageRequest request = new ItemPageRequest(9,4);
+        // when
+        ApiResponse<PaginationMetaData, Item> response = underTest.getItemsPage(request);
+        // then
+        assertNotNull(response);
+        assertNotNull(response.getMeta());
+        assertEquals(404, response.getMeta().getCode());
+        assertFalse(response.getMeta().isSuccess());
+        assertNotNull(response.getMeta().getErrorMessage());
+        assertTrue(response.getMeta().getErrorMessage().contains("Maximal page for the size is 7"));
+        assertTrue(response.getMeta().getErrorMessage().contains("Last full page is 6"));
     }
 //-------------------------------------------------------
 
@@ -105,19 +158,22 @@ class ItemServicePagingTest {
         assertFalse(response.getMeta().isSuccess());
         assertNotNull(response.getMeta().getErrorMessage());
         assertTrue(response.getMeta().getErrorMessage()
-                .contains("Maximal page for the size is " +response.getMeta().getTotalPages()));
+                .contains("Maximal page for the size is 7"));
+        assertTrue(response.getMeta().getErrorMessage()
+                .contains("Last full page is 6"));
 
-        assertEquals(7, response.getMeta().getNumber());
+        assertEquals(6, response.getMeta().getNumber());
         assertEquals(4, response.getMeta().getSize());
         assertEquals(30, response.getMeta().getTotalElements());
         assertEquals(8, response.getMeta().getTotalPages());
-        assertTrue(response.getMeta().isFirst());
-        assertTrue(response.getMeta().isLast());
+        assertFalse(response.getMeta().isFirst());
+        assertFalse(response.getMeta().isLast());
 
         assertNotNull(response.getData());
         assertFalse(response.getData().isEmpty());
         assertEquals(4, response.getData().size());
-        assertEquals("69aeefcbe5c3dbd26376b0c5", response.getData().get(3).getId());
+        assertEquals("69aeefcbe5c3dbd26376b0ad", response.getData().get(0).getId());
+        assertEquals("69aeefcbe5c3dbd26376b0aa", response.getData().get(3).getId());
     }
 
     @Test

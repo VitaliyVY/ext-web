@@ -33,6 +33,7 @@ class ItemServiceTest {
 
     @BeforeEach
     void setUp() {
+        TestItems.reset(underTest);
     }
    @AfterEach
     void tearsDown(){
@@ -48,7 +49,7 @@ class ItemServiceTest {
         @Test
     void whenItemIsPresentThenReturnAsOkApiResponse() {
         // given
-        String id = "69aeefcbe5c3dbd26376b0a8";
+        String id = TestItems.FIRST_ID;
         // when
             Item item = underTest.getById(id);
             ApiResponse<BaseMetaData, Item> response = underTest.getByIdAsApiResponse(id);

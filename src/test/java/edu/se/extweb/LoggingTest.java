@@ -32,26 +32,30 @@ public class LoggingTest {
     @Autowired
     private ItemService underTest;
 
+    @BeforeEach
+    void setUp() {
+        TestItems.reset(underTest);
+    }
 
     @Test
     void testLoggingOutputBeforeMethodGetById(CapturedOutput output) {
         // given
-       Item item =  underTest.getById("69aeefcbe5c3dbd26376b0a8");
+       Item item =  underTest.getById(TestItems.FIRST_ID);
        //when
        assertNotNull(item);
        // then
        assertTrue(output.toString().contains("Entering method:"));
        assertTrue(output.toString().contains("ItemService.getById"));
-       assertTrue(output.toString().contains("69aeefcbe5c3dbd26376b0a8"));
+       assertTrue(output.toString().contains(TestItems.FIRST_ID));
     }
 
     @Test
     void testLoggingOutputAfterMethodGetById(CapturedOutput output) {
-        Item item =  underTest.getById("69aeefcbe5c3dbd26376b0a8");
+        Item item =  underTest.getById(TestItems.FIRST_ID);
         assertNotNull(item);
         assertTrue(output.toString().contains("ItemService.getById"));
         assertTrue(output.toString().contains("completed successfully"));
-        assertTrue(output.toString().contains("69aeefcbe5c3dbd26376b0a8"));
+        assertTrue(output.toString().contains(TestItems.FIRST_ID));
         assertTrue(output.toString().contains("Iggy"));
     }
 

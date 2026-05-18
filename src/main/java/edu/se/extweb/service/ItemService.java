@@ -18,19 +18,14 @@ import edu.se.extweb.request.ItemUpdateRequest;
 import edu.se.extweb.response.ApiResponse;
 import edu.se.extweb.response.BaseMetaData;
 import edu.se.extweb.response.PaginationMetaData;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 /**
  *
@@ -162,23 +157,33 @@ public ApiResponse<PaginationMetaData, Item> getItemsPage(ItemPageRequest reques
     metaData.setTotalPages(page.getTotalPages());
     List<Item> items = page.getContent();
 
-    if (request.page() >= page.getTotalPages() && page.getTotalElements() > 0) {
-        int lastPageNumber = page.getTotalPages() - 1;
+    if (page.getTotalElements() == 0) {
+        metaData.setCode(404);
+        metaData.setSuccess(false);
+        metaData.setErrorMessage("Items list is empty");
+        return new ApiResponse<>(metaData, items);
+    }
 
-        Pageable fallbackPageable = PageRequest.of(0, request.size(),
+    if (request.page() >= page.getTotalPages()) {
+        int lastFullPageNumber = Math.max(0,
+                (int) ((page.getTotalElements() - request.size()) / request.size()));
+
+        Pageable fallbackPageable = PageRequest.of(lastFullPageNumber, request.size(),
                 Sort.by(Sort.Direction.DESC, "id"));
-        items = new ArrayList<>(itemRepository.findAll(fallbackPageable).getContent());
-        Collections.reverse(items);
+        Page<Item> fallbackPage = itemRepository.findAll(fallbackPageable);
+        items = fallbackPage.getContent();
 
         metaData.setCode(404);
         metaData.setSuccess(false);
-        metaData.setErrorMessage("Maximal page for the size is " + page.getTotalPages());
-        metaData.setNumber(lastPageNumber);
-        metaData.setFirst(true);
-        metaData.setLast(true);
+        metaData.setErrorMessage("Maximal page for the size is "
+                + (page.getTotalPages() - 1)
+                + ". Last full page is " + lastFullPageNumber);
+        metaData.setNumber(fallbackPage.getNumber());
+        metaData.setFirst(fallbackPage.isFirst());
+        metaData.setLast(fallbackPage.isLast());
 
         log.warn("Out of range. Requested page {} but maximal page for the size is {}",
-                request.page(), page.getTotalPages());
+                request.page(), page.getTotalPages() - 1);
     }
 
     ApiResponse<PaginationMetaData, Item> response =
